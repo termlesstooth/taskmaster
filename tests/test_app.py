@@ -77,6 +77,24 @@ class WorkspaceTests(unittest.TestCase):
         self.write('tasks',{'status_id':1},t['id'])
         self.write('statuses',ident=custom['id'],method='DELETE')
 
+    def test_task_comments_persist_and_cascade(self):
+        comment = self.write('comments', {'task_id': 1, 'author': 'You', 'body': 'Started the first pass.'})
+        self.assertEqual(comment['task_id'], 1)
+        with app.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM comments WHERE task_id=1').fetchone()[0], 1)
+        self.write('comments', ident=comment['id'], method='DELETE')
+        with app.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM comments WHERE task_id=1').fetchone()[0], 0)
+        second = self.write('comments', {'task_id': 1, 'body': 'This should disappear with the task.'})
+        self.write('tasks', ident=1, method='DELETE')
+        with app.connect() as db:
+            self.assertIsNone(db.execute('SELECT id FROM comments WHERE id=?', (second['id'],)).fetchone())
+
+    def test_comment_validation(self):
+        for data in [{'task_id': 1, 'body': ' '}, {'task_id': 999, 'body': 'Missing task'}, {'task_id': 1, 'body': []}]:
+            with self.subTest(data=data), self.assertRaises(app.Invalid):
+                self.write('comments', data)
+
     def test_last_status_cannot_be_removed(self):
         p = self.write('nodes',dict(name='Fresh',kind='project'))
         with app.connect() as db:

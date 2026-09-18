@@ -49,6 +49,11 @@ def init_db(demo=True):
         CREATE INDEX IF NOT EXISTS tasks_project ON tasks(project_id);
         CREATE INDEX IF NOT EXISTS tasks_parent ON tasks(parent_id);
         CREATE INDEX IF NOT EXISTS tasks_due ON tasks(due_date);
+        CREATE TABLE IF NOT EXISTS comments (
+          id INTEGER PRIMARY KEY, task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          author TEXT NOT NULL DEFAULT 'You', body TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        CREATE INDEX IF NOT EXISTS comments_task ON comments(task_id, created_at);
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
         """)
         if db.execute("SELECT 1 FROM settings WHERE key='initialized'").fetchone():
@@ -151,7 +156,7 @@ def validate_task(db, task, ident=None):
 def mutate(db, method, path, data):
     parts = path.strip('/').split('/')
     table = parts[1] if len(parts)>1 else ''
-    if table not in {'nodes','tasks','statuses'} or len(parts) not in {2,3}:
+    if table not in {'nodes','tasks','statuses','comments'} or len(parts) not in {2,3}:
         raise Invalid('Unknown endpoint')
     ident = int(parts[2]) if len(parts)==3 and parts[2].isdigit() else None
     if len(parts) == 3 and ident is None:
@@ -167,6 +172,19 @@ def mutate(db, method, path, data):
                 raise Invalid('Keep at least one status')
         db.execute(f"DELETE FROM {table} WHERE id=?",(ident,))
         return {'ok': True}
+    if table == 'comments':
+        if method != 'POST' or old is not None:
+            raise Invalid('Comments can only be added or deleted')
+        task_id = data.get('task_id')
+        if not isinstance(task_id, int) or isinstance(task_id, bool):
+            raise Invalid('Choose a task for this comment')
+        require(db, 'tasks', task_id)
+        body = nonempty(data.get('body', ''), 'Comment', 5000)
+        author = data.get('author', 'You')
+        if not isinstance(author, str) or not author.strip() or len(author) > 100:
+            raise Invalid('Author must contain 1–100 characters')
+        cur = db.execute("INSERT INTO comments (task_id,author,body) VALUES (?,?,?)", (task_id,author.strip(),body))
+        return require(db, 'comments', cur.lastrowid)
     if (method == 'PATCH' and old is None) or (method == 'POST' and old is not None):
         raise Invalid('Invalid operation')
     if table == 'tasks':
@@ -229,7 +247,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == '/api/state':
             with connect() as db:
-                self.send_json({table: [dict(row) for row in db.execute(f'SELECT * FROM {table} ORDER BY id')] for table in ['nodes','statuses','tasks']})
+                self.send_json({table: [dict(row) for row in db.execute(f'SELECT * FROM {table} ORDER BY id')] for table in ['nodes','statuses','tasks','comments']})
             return
         assets = {'/':'index.html','/app.js':'app.js','/style.css':'style.css','/favicon.svg':'favicon.svg'}
         if path not in assets:

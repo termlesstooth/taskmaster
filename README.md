@@ -29,6 +29,7 @@ python3 app.py --empty --db my-workspace.db
 - **Daily** puts overdue tasks first, then today, future deadlines, and undated tasks. Completed tasks are excluded. The sidebar’s My day includes the entire workspace; the Daily tab respects the selected space/project.
 - Customize each project's status names, colors, and completion behavior using **Statuses**. New statuses appear as board columns. A status must be empty before it can be removed. At least one status must remain.
 - Add descriptions, priorities, dates, one label, and an assignee name. Search covers these text fields. Filter by priority or sort by due date/priority. List view preserves hierarchy when sorting.
+- Open any task card to add a persistent activity note. Notes show the author and timestamp, appear as a comment count on cards, and can be deleted from the task detail view. They follow the task when it is moved and are removed with the task.
 - Press **N** to create a task, **⌘/Ctrl K** to search, and **Esc** to close a dialog. Animations respect reduced-motion preferences.
 
 ## Storage and scope
