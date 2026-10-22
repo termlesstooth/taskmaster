@@ -45,7 +45,8 @@ def init_db(demo=True):
           status_id INTEGER NOT NULL REFERENCES statuses(id), title TEXT NOT NULL,
           description TEXT NOT NULL DEFAULT '', priority TEXT NOT NULL DEFAULT 'medium',
           due_date TEXT, assignee TEXT NOT NULL DEFAULT '', label TEXT NOT NULL DEFAULT '',
-          position INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+          position INTEGER NOT NULL DEFAULT 0, day_order INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
         CREATE INDEX IF NOT EXISTS tasks_project ON tasks(project_id);
         CREATE INDEX IF NOT EXISTS tasks_parent ON tasks(parent_id);
         CREATE INDEX IF NOT EXISTS tasks_due ON tasks(due_date);
@@ -56,6 +57,9 @@ def init_db(demo=True):
         CREATE INDEX IF NOT EXISTS comments_task ON comments(task_id, created_at);
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
         """)
+        # Databases created before the My day ordering feature need the extra column.
+        if 'day_order' not in {row['name'] for row in db.execute("PRAGMA table_info(tasks)")}:
+            db.execute("ALTER TABLE tasks ADD COLUMN day_order INTEGER NOT NULL DEFAULT 0")
         if db.execute("SELECT 1 FROM settings WHERE key='initialized'").fetchone():
             return
         db.execute("INSERT INTO settings VALUES ('initialized','1')")
@@ -149,8 +153,9 @@ def validate_task(db, task, ident=None):
     for field, limit in [('description',20000),('assignee',100),('label',80)]:
         if not isinstance(task[field], str) or len(task[field]) > limit:
             raise Invalid(f'{field} is too long or invalid')
-    if not isinstance(task['position'], int) or isinstance(task['position'], bool):
-        raise Invalid('Invalid position')
+    for field in ('position', 'day_order'):
+        if not isinstance(task[field], int) or isinstance(task[field], bool):
+            raise Invalid(f'Invalid {field}')
 
 
 def mutate(db, method, path, data):
@@ -188,7 +193,7 @@ def mutate(db, method, path, data):
     if (method == 'PATCH' and old is None) or (method == 'POST' and old is not None):
         raise Invalid('Invalid operation')
     if table == 'tasks':
-        defaults = dict(project_id=None,parent_id=None,status_id=None,title='',description='',priority='medium',due_date=None,assignee='',label='',position=0)
+        defaults = dict(project_id=None,parent_id=None,status_id=None,title='',description='',priority='medium',due_date=None,assignee='',label='',position=0,day_order=0)
         fields = set(defaults)
         item = {**defaults, **(old or {}), **{k:v for k,v in data.items() if k in fields}}
         if old and item['project_id'] != old['project_id']:
@@ -249,7 +254,7 @@ class Handler(BaseHTTPRequestHandler):
             with connect() as db:
                 self.send_json({table: [dict(row) for row in db.execute(f'SELECT * FROM {table} ORDER BY id')] for table in ['nodes','statuses','tasks','comments']})
             return
-        assets = {'/':'index.html','/app.js':'app.js','/style.css':'style.css','/favicon.svg':'favicon.svg'}
+        assets = {'/':'index.html','/app.js':'app.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/images/stoic-bust.png':'images/stoic-bust.png'}
         if path not in assets:
             self.send_error(404)
             return

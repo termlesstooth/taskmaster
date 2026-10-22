@@ -62,3 +62,101 @@ dialog{background:#fffefa;border-color:#d9dbcf;border-radius:9px;color:var(--ink
 .board .task-card h3{margin-bottom:6px}
 .board .card-footer{margin-top:12px;padding-top:9px}
 @media(max-width:760px){.comment-composer{display:grid}.comment-composer .secondary-button{justify-self:end}}
+
+/* My day: the dated group is manually sortable by drag or by arrow keys on the handle. */
+.daily-list[data-sortable] .daily-task{cursor:grab}
+.daily-list[data-sortable] .daily-task:active{cursor:grabbing}
+.drag-handle{width:22px;height:26px;padding:0;margin:0 -6px 0 -4px;border-radius:4px;color:#aeb0a2;flex-shrink:0;cursor:grab}
+.drag-handle:hover{color:var(--rust);background:#eeeee4}
+.drag-handle .icon{width:17px;height:17px}
+.daily-task.drop-before{box-shadow:0 -2px 0 var(--rust)}
+.daily-task.drop-after{box-shadow:0 2px 0 var(--rust)}
+
+/* Stoic edition — composed, tactile, and intentionally spare. */
+:root{
+  --paper:#f3f0e7;
+  --paper-deep:#e9e4d7;
+  --ink:#292b28;
+  --muted:#75776e;
+  --border:#d4d0c3;
+  --rust:#8b4532;
+  --sage:#647158;
+}
+body{
+  background-color:var(--paper);
+  background-image:radial-gradient(circle at 82% 0%,#fbf8efaa 0,transparent 28rem),linear-gradient(90deg,#ffffff14 1px,transparent 1px);
+  background-size:auto,44px 44px;
+}
+#sidebar{background:linear-gradient(180deg,#ece7da,#e5e0d3);border-right-color:#cfcabd}
+.brand{font-size:42px;letter-spacing:-2.4px}
+.brand-mark:after{content:'☉';font-size:31px}
+.workspace{border-color:#cbc6b8;background:#f4f1e8aa;border-radius:2px}
+.workspace-logo{border-radius:50%;background:#d8d2c2;color:#534f43}
+.side-primary button,.nav-row{border-radius:2px}
+.side-primary .active,.nav-row.active{background:#d9ddcd;color:#3f4939;box-shadow:inset 3px 0 0 var(--sage)}
+.section-label{font-size:8px;color:#6e7067}
+.quiet-note{font-size:13px;color:#606258;border-top-color:#c9c4b6}
+.topbar{background:#f3f0e7d9;backdrop-filter:blur(12px)}
+.project-header{padding-top:48px;padding-bottom:34px}
+.project-header:before{content:'MEMENTO VIVERE';display:block;margin-bottom:15px;color:var(--rust);font-family:Georgia,'Times New Roman',serif;font-size:9px;font-weight:bold;letter-spacing:2.4px}
+h1{font-size:56px;max-width:760px}
+.project-heading p{font-family:Georgia,'Times New Roman',serif;font-style:italic;max-width:580px;line-height:1.6}
+.project-emblem{border-radius:50%;background:#e4dccd;border-color:#cfc5b4}
+.viewbar{background:#eeeadf8c}
+.view-tabs button{letter-spacing:.05em;text-transform:uppercase;font-size:10px}
+.primary-button{border-radius:2px;letter-spacing:.04em;text-transform:uppercase;font-size:10px}
+.board-column{padding-top:4px}
+.column-header{border-bottom:2px solid #b7b09e}
+.column-header h2{font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:normal}
+.column-count{border-radius:50%;min-width:20px;text-align:center}
+.task-card{border-radius:2px;background:#fffdf7;box-shadow:0 1px 0 #b9b3a620,0 8px 22px #5d55440a}
+.task-card:hover{transform:translateY(-2px);box-shadow:0 1px 0 #b9b3a630,0 12px 28px #5d554417}
+.task-card h3{font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.4}
+.tag,.status-chip{border-radius:1px;letter-spacing:.03em}
+.add-task{border-radius:1px}
+.main-footer{font-family:Georgia,'Times New Roman',serif;font-style:italic}
+.daily-intro,.daily-task,.list-view,dialog{border-radius:2px}
+.daily-intro{position:relative;overflow:hidden}
+.daily-intro:after{content:'✦';position:absolute;right:27px;bottom:-21px;color:#d9d1be;font:100px/1 Georgia,serif}
+.daily-intro>*{position:relative;z-index:1}
+.daily-intro h2,.dialog-top h2{font-family:Georgia,'Times New Roman',serif;letter-spacing:-.7px}
+@media(max-width:760px){
+  .project-header{padding-top:34px}
+  .project-header:before{margin-bottom:12px}
+  h1{font-size:39px}
+  .task-card h3{font-size:15px}
+}
+
+/* Monochrome edition — ink, paper, and no ornamental colour. */
+:root{
+  --paper:#f7f7f4;
+  --paper-deep:#ebebe6;
+  --ink:#161616;
+  --muted:#676767;
+  --border:#cfcfca;
+  --rust:#171717;
+  --sage:#303030;
+}
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(90deg,#00000008 1px,transparent 1px),linear-gradient(#00000006 1px,transparent 1px);
+  background-size:40px 40px;
+  filter:grayscale(1);
+}
+#sidebar{background:linear-gradient(180deg,#eeeeea,#e3e3df);border-right-color:#bdbdb7}
+.topbar{background:#f7f7f4e8}
+.workspace{background:#ffffff80;border-color:#c9c9c3}
+.side-primary .active,.nav-row.active{background:#deded9;color:#111;box-shadow:inset 3px 0 0 #111}
+.project-header{position:relative;overflow:hidden}
+.project-header:before{color:#222}
+.project-header:after{content:'';position:absolute;right:42px;bottom:-102px;width:min(44vw,580px);aspect-ratio:3/2;background:url('/images/stoic-bust.png') center/contain no-repeat;opacity:.24;mix-blend-mode:multiply;pointer-events:none}
+.project-heading,.project-meta{position:relative;z-index:1}
+.project-emblem{background:#e8e8e3;border-color:#bdbdb7;color:#111}
+.viewbar{background:#efefebcc}
+.primary-button{background:#171717;border-color:#171717}.primary-button:hover{background:#3b3b3b}
+.task-card{background:#fff;border-color:#d0d0cb;box-shadow:0 1px 0 #00000018,0 8px 22px #00000008}
+.task-card:hover{border-color:#777;box-shadow:0 1px 0 #00000020,0 12px 28px #00000013}
+.daily-intro,.list-header{background:#edede9}.daily-intro:after{color:#d2d2cc}
+.daily-sun{background:#deded9;color:#111}
+#toast{background:#171717}
+@media(max-width:760px){.project-header:after{right:-112px;bottom:-26px;width:500px;opacity:.13}}
