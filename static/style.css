@@ -159,4 +159,5 @@ body{
 .daily-intro,.list-header{background:#edede9}.daily-intro:after{color:#d2d2cc}
 .daily-sun{background:#deded9;color:#111}
 #toast{background:#171717}
+.export-priorities{position:relative;z-index:2;margin-left:auto;margin-right:18px;padding:9px 12px;border:1px solid #222;background:#fff;color:#171717;border-radius:1px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}.export-priorities:hover{background:#171717;color:#fff}
 @media(max-width:760px){.project-header:after{right:-112px;bottom:-26px;width:500px;opacity:.13}}

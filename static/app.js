@@ -14,6 +14,7 @@ const icons = {
   calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18"/>',
   filter:'<path d="M4 7h16M7 12h10m-7 5h4"/>',
   arrow:'<path d="M8 4v16m-3-3 3 3 3-3m5 3V4m-3 3 3-3 3 3"/>',
+  export:'<path d="M12 3v12m-4-4 4 4 4-4M5 21h14"/>',
   check:'<path d="m5 12 4 4L19 6"/>',
   more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   comment:'<path d="M20 11.5a7 7 0 0 1-8 7 8 8 0 0 1-4-.9L4 19l1.4-3A7 7 0 1 1 20 11.5Z"/>',
@@ -46,6 +47,7 @@ const taskComments = id => state.comments.filter(c=>c.task_id===id).sort((a,b)=>
 const commentDate = value => { const d=new Date(String(value).replace(' ','T')+'Z'); return Number.isNaN(d.getTime()) ? value : d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); };
 function scopedTasks() { const ids=state.selected===null?null:descendants(state.selected); return state.tasks.filter(t=>(!ids || ids.has(t.project_id))); }
 function filteredTasks() { let rows=scopedTasks().filter(t=>(!state.priority || t.priority===state.priority) && `${t.title} ${t.description} ${t.label} ${t.assignee}`.toLowerCase().includes(state.query.toLowerCase())); if(state.sort==='due') rows.sort((a,b)=>(a.due_date || '9999').localeCompare(b.due_date || '9999')); else if(state.sort==='priority') {const rank={urgent:0,high:1,medium:2,low:3}; rows.sort((a,b)=>rank[a.priority]-rank[b.priority]);} else rows.sort((a,b)=>a.position-b.position || a.id-b.id); return rows; }
+async function copyDueTitles() { const rows=scopedTasks().filter(t=>!done(t)&&t.due_date).sort((a,b)=>dayRank(a)-dayRank(b)||a.due_date.localeCompare(b.due_date)||a.id-b.id); if(!rows.length){toast('No open tasks with due dates to copy.',true);return;} const text=rows.map(t=>`*${node(t.project_id)?.name || 'Project'}* - ${t.title}`).join('\n'); try{await navigator.clipboard.writeText(text);}catch{const input=document.createElement('textarea');input.value=text;input.style.cssText='position:fixed;opacity:0';document.body.append(input);input.select();document.execCommand('copy');input.remove();} toast(`${rows.length} priority ${rows.length===1?'title':'titles'} copied for Slack.`); }
 async function api(path, method='GET', data) { const response=await fetch('/api/'+path,{method,headers:method==='GET'?{}:{'Content-Type':'application/json'},body:method==='GET'?undefined:JSON.stringify(data || {})}); const result=await response.json(); if(!response.ok) throw new Error(result.error || 'Something went wrong'); return result; }
 async function refresh() { Object.assign(state,await api('state')); if(state.selected!==null && !node(state.selected)) state.selected=projects()[0]?.id ?? null; render(); }
 async function change(path, method, data, message) { if(state.busy) return false; state.busy=true; try { await api(path,method,data); await refresh(); if(message) toast(message); return true; } catch(error) {toast(error.message,true); return false;} finally {state.busy=false;} }
@@ -85,7 +87,9 @@ function renderView() {
    const dated=active.filter(t=>t.due_date).sort((a,b)=>dayRank(a)-dayRank(b) || a.due_date.localeCompare(b.due_date) || a.id-b.id);
    const undated=active.filter(t=>!t.due_date).sort((a,b)=>a.position-b.position || a.id-b.id);
    const group=(title,sub,cls,items,sortable)=>items.length?`<section class="daily-group ${cls}"><div class="daily-group-heading"><h3>${title}<span>${items.length}</span></h3><p>${sub}</p></div><div class="daily-list" ${sortable?'data-sortable="1"':''}>${items.map(t=>dailyRow(t,sortable)).join('')}</div></section>`:'';
+   const exportButton=dated.length?`<button class="export-priorities" data-action="export-due">${icon('export')} Copy priorities</button>`:'';
    container.innerHTML=`<div class="daily-view"><div class="daily-intro"><div><span class="eyebrow">YOUR DAILY PERSPECTIVE</span><h2>${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</h2><p>One thing at a time is a good place to start.</p></div><span class="daily-sun">${icon('sun')}</span></div>${group('With a due date','Drag to set the order you’ll work through them.','scheduled',dated,true)}${group('No due date','Good ideas, waiting for their moment.','unscheduled',undated,false)}${!active.length?empty('You’re all caught up.','No open tasks match this view. Enjoy a little breathing room.','new-task','Add something new'):''}</div>`;
+   if(exportButton) $('.daily-intro',container).insertAdjacentHTML('beforeend',exportButton);
  }
 }
 // Tasks keep a manual My day order; 0 means "never dragged", so those fall back to due date at the end.
@@ -135,6 +139,7 @@ document.addEventListener('click',async e=>{
  else if(a==='daily-global'){state.view='daily';selectNode(null);}
  else if(a==='search'){$('#task-search').focus();$('#sidebar').classList.remove('mobile-open');}
  else if(a==='new-task')taskForm(null,{status_id:Number(button.dataset.status)||null});
+ else if(a==='export-due')copyDueTitles();
  else if(a==='edit-task')taskForm(id);
  else if(a==='add-comment'){const body=$('#comment-body')?.value.trim();if(!body){toast('Write a note first',true);return;}if(await change('comments','POST',{task_id:Number(button.dataset.task),author:'You',body},'Comment added'))taskForm(Number(button.dataset.task));}
  else if(a==='delete-comment'){if(await change('comments/'+id,'DELETE',{},'Comment deleted'))taskForm(Number(button.dataset.task));}
