@@ -85,7 +85,8 @@ function renderView() {
  } else {
    const active=rows.filter(t=>!done(t));
    const dated=active.filter(t=>t.due_date).sort((a,b)=>dayRank(a)-dayRank(b) || a.due_date.localeCompare(b.due_date) || a.id-b.id);
-   const undated=active.filter(t=>!t.due_date).sort((a,b)=>a.position-b.position || a.id-b.id);
+   const priorityRank={urgent:0,high:1,medium:2,low:3};
+   const undated=active.filter(t=>!t.due_date).sort((a,b)=>state.sort==='priority' ? priorityRank[a.priority]-priorityRank[b.priority] || a.position-b.position || a.id-b.id : a.position-b.position || a.id-b.id);
    const group=(title,sub,cls,items,sortable)=>items.length?`<section class="daily-group ${cls}"><div class="daily-group-heading"><h3>${title}<span>${items.length}</span></h3><p>${sub}</p></div><div class="daily-list" ${sortable?'data-sortable="1"':''}>${items.map(t=>dailyRow(t,sortable)).join('')}</div></section>`:'';
    const exportButton=dated.length?`<button class="export-priorities" data-action="export-due">${icon('export')} Copy priorities</button>`:'';
    container.innerHTML=`<div class="daily-view"><div class="daily-intro"><div><span class="eyebrow">YOUR DAILY PERSPECTIVE</span><h2>${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</h2><p>One thing at a time is a good place to start.</p></div><span class="daily-sun">${icon('sun')}</span></div>${group('With a due date','Drag to set the order you’ll work through them.','scheduled',dated,true)}${group('No due date','Good ideas, waiting for their moment.','unscheduled',undated,false)}${!active.length?empty('You’re all caught up.','No open tasks match this view. Enjoy a little breathing room.','new-task','Add something new'):''}</div>`;
